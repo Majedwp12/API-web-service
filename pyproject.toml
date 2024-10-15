@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "webservice"
+version = "0.1.0"
+description = ""
+authors = ["majed_wp12 <majedwp12@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.2"
+uvicorn = "^0.31.1"
+pandas = "^2.2.3"
+requests = "^2.32.3"
+characters = "^0.1.0"
+jdatetime = "^5.0.0"
+bs4 = "^0.0.2"
+aiohttp = "^3.10.10"
+unsync = "^1.4.0"
+persiantools = "^4.2.0"
+ipython = "^8.28.0"
+lxml = "^5.3.0"
+gunicorn = "^23.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
