@@ -1,14 +1,14 @@
+# https://cdn.tsetmc.com/api/ClientType/GetClientTypeHistory/46348559193224090
 from src.base_functions import (
     make_url,
     get_data,
     data_to_js,
     js_to_df,
     df_to_js,
-    remove_columns,
 )
 
 
-def get_shareholders_data(instrument_code: str) -> dict:
+def get_realـlegal_data(instrument_code: str) -> dict:
     """
     Fetches and processes notification data from a remote API based on the provided instrument code.
 
@@ -24,13 +24,13 @@ def get_shareholders_data(instrument_code: str) -> dict:
     """
 
     # Base URL for the API to fetch prepared data.
-    base_url = "https://cdn.tsetmc.com/api/Shareholder/GetInstrumentShareHolderLast"
+    base_url = "https://cdn.tsetmc.com/api/ClientType/GetClientTypeHistory"
+
+    # URL for downloading additional content based on TracingNo and RowOrder.
 
     # List of columns to remove from the final DataFrame as they are unnecessary.
-    columns_to_remove = [
-        "shareHolderID",
-        "dEven",
-    ]
+    # columns_to_remove = []
+
     try:
         # Step 1: Generate the complete API URL using the instrument code.
         api_url = make_url(base_url, instrument_code)
@@ -39,14 +39,11 @@ def get_shareholders_data(instrument_code: str) -> dict:
         data = get_data(api_url)
 
         # Step 3: Parse the raw data into a JSON format with the key 'preparedData'.
-        data = data_to_js(data, 'shareHolder')
+        data = data_to_js(data, 'clientType')
+        data=js_to_df(data)
+        data=df_to_js(data)
 
         # Step 4: Convert the parsed JSON data into a Pandas DataFrame.
-        data = js_to_df(data)
-
-        # Step 6: Remove unnecessary columns from the DataFrame for better clarity.
-        data = remove_columns(data, columns_to_remove)
-        data = df_to_js(data)
 
         # Return the final JSON data after processing.
         return data
@@ -61,6 +58,3 @@ def get_shareholders_data(instrument_code: str) -> dict:
     except Exception as e:
         raise ValueError(
             f"An unexpected error occurred: {e}. Please check your inputs and ensure everything is in order.")
-
-
-

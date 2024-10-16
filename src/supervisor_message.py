@@ -41,7 +41,7 @@ def get_supervisor_message_data(instrument_code: str) -> dict:
         # Step 6: Remove unnecessary columns from the DataFrame for better clarity.
         data = remove_columns(data, columns_to_remove)
         data.replace({'\n': '', '\t': ''}, regex=True, inplace=True)
-        data.to_csv('./majed.csv')
+        # data.to_csv('./majed.csv')
         # Step 8: Convert the cleaned DataFrame back into JSON format.
         data = df_to_js(data)
         # Return the final JSON data after processing.

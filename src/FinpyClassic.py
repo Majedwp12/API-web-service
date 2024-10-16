@@ -655,7 +655,7 @@ def get_ri_history(stock: str = 'خودرو',
     return df_RI_tab
 
 
-def Get_RI_History(stock='خودرو', start_date='1400-01-01', end_date='1401-01-01', ignore_date=False, show_weekday=False,
+def Get_RI_History(stock='خودرو', start_date='1400-01-01', end_date='1401-01-01', ignore_date=False,
                    double_date=False, alt=False):
     """
     دریافت سابقه اطلاعات حقیقی-حقوقی یک سهم در روزهای معاملاتی بین تاریخ شروع و پایان
@@ -732,6 +732,7 @@ def Get_RI_History(stock='خودرو', start_date='1400-01-01', end_date='1401-0
     df_RI_tab = df_RI_tab.sort_index(ascending=True)
     df_RI_tab = df_RI_tab.reset_index()
     # determining week days:
+    df_RI_tab['Date'] = pd.to_datetime(df_RI_tab['Date'], errors='coerce')
     df_RI_tab['Weekday'] = df_RI_tab['Date'].dt.weekday
     df_RI_tab['Weekday'] = df_RI_tab['Weekday'].apply(lambda x: calendar.day_name[x])
     df_RI_tab['J-Date'] = df_RI_tab['Date'].apply(lambda x: str(jdatetime.date.fromgregorian(date=x.date())))
@@ -1581,6 +1582,7 @@ def Get_EWPI_History(start_date='1395-01-01', end_date='1400-12-29', ignore_date
     r_cl = requests.get(f'http://tsetmc.com/tsev2/chart/data/Index.aspx?i={sector_web_id}&t=value', headers=headers)
     df_sector_cl = pd.DataFrame(r_cl.text.split(';'))
     columns = ['J-Date', 'Adj Close']
+    print(df_sector_cl[0].str.split(",", expand=True))
     df_sector_cl[columns] = df_sector_cl[0].str.split(",", expand=True)
     df_sector_cl.drop(columns=[0], inplace=True)
     df_sector_cl['J-Date'] = df_sector_cl['J-Date'].apply(
@@ -2041,7 +2043,7 @@ def Get_ACT50_History(start_date='1395-01-01', end_date='1400-12-29', ignore_dat
 
 ################################################################################################################################################################################
 ################################################################################################################################################################################
-def Get_MarketWatch(save_excel=True, save_path='D:/FinPy-TSE Data/MarketWatch'):
+def Get_MarketWatch(save_excel=False, save_path='D:/FinPy-TSE Data/MarketWatch'):
     # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # GET MARKET RETAIL AND INSTITUTIONAL DATA
     # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

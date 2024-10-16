@@ -33,7 +33,7 @@ def get_introduction_data(instrument_code: str) -> dict:
         # Step 2: Fetch the raw data from the API.
         data = get_data(api_url)
 
-        data = df_to_js(data)
+        # data = df_to_js(data)
 
         # Return the final JSON data after processing.
         return data
