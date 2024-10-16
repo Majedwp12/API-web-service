@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from typing import List, Optional
 from pydantic import BaseModel
-from FinpyClassic import (
+from src.FinpyClassic import (
     get_tse_webid,
     get_price_history,
     get_ri_history,
@@ -14,6 +14,7 @@ from FinpyClassic import (
     Get_MarketWatch,
     Get_60D_PriceHistory,
 )
+from src.supervisor_message import get_supervisor_message_data
 
 app = FastAPI()
 
@@ -392,8 +393,43 @@ async def api_get_usd_rial(
     - **double_date**: Include both Jalali and Gregorian dates.
     """
     try:
+        print('majed')
         df = Get_USD_RIAL(start_date, end_date, ignore_date,
                           show_weekday, double_date)
         return df.to_dict(orient='records')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+@app.get("/get_supervisor_message_data", tags=["majed"], responses={
+    200: {
+        "description": "Successfully retrieved ",
+        "content": {"application/json": {"example": [{
+      "tseMsgIdn": 196411,
+      "dEven": 20241012,
+      "hEven": 101423,
+      "tseTitle": "توقف نماد (وپارس1) به علت افشاي اطلاعات با اهميت گروه ب",
+      "tseDesc": "به اطلاع ميرساند نماد معاملاتي شركت بانك‌پارسيان‌ (وپارس1) با توجه به افشاي اطلاعات با اهميت گروه ب، متوقف گرديد. نماد مذكور 60 دقيقه ديگر با محدوديت دامنه نوسان قيمت بازگشايي خواهد شد. مديريت عمليات بازار شركت بورس اوراق بهادار تهران",
+      "flow": 0
+    }]}}
+    },
+    500: {"description": "Server error"}})
+async def api_get_supervisor_message_data(
+        instrument_code: str = Query(
+            '33293588228706998', description="cod of company"),):
+    """
+    Retrieve the USD to Rial exchange rate history.
+
+    - **start_date**: Start date in Jalali calendar.
+    - **end_date**: End date in Jalali calendar.
+    - **ignore_date**: Whether to ignore the date range.
+    - **show_weekday**: Show the weekday for each date.
+    - **double_date**: Include both Jalali and Gregorian dates.
+    """
+    try:
+        print('majed')
+        return get_supervisor_message_data(instrument_code)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

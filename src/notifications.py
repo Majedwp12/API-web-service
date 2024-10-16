@@ -1,4 +1,4 @@
-from base_fuctions import (
+from src.base_functions import (
     make_url,
     get_data,
     data_to_js,
@@ -49,29 +49,29 @@ def get_notifications_data(instrument_code: str) -> dict:
         api_url = make_url(base_url, instrument_code)
 
         # Step 2: Fetch the raw data from the API.
-        raw_data = get_data(api_url)
+        data = get_data(api_url)
 
         # Step 3: Parse the raw data into a JSON format with the key 'preparedData'.
-        parsed_data = data_to_js(raw_data, 'preparedData')
+        data = data_to_js(data, 'preparedData')
 
         # Step 4: Convert the parsed JSON data into a Pandas DataFrame.
-        data_frame = js_to_df(parsed_data)
+        data = js_to_df(data)
 
         # Step 5: Add the download URL to the DataFrame, handling any missing or null values in the process.
-        updated_data_frame = add_url_with_single_null_handling(data_frame, download_url)
+        data = add_url_with_single_null_handling(data, download_url)
 
         # Step 6: Remove unnecessary columns from the DataFrame for better clarity.
-        cleaned_data_frame = remove_columns(updated_data_frame, columns_to_remove)
+        data = remove_columns(data, columns_to_remove)
 
         # Step 7: Rename columns to improve readability.
         column_renames = {"sentDateTime_Gregorian": "DateTime"}
-        renamed_data_frame = rename_columns(cleaned_data_frame, column_renames)
+        data = rename_columns(data, column_renames)
 
         # Step 8: Convert the cleaned DataFrame back into JSON format.
-        final_json_data = df_to_js(renamed_data_frame)
+        data = df_to_js(data)
 
         # Return the final JSON data after processing.
-        return final_json_data
+        return data
 
     # Handle common errors with meaningful messages.
     except ConnectionError:

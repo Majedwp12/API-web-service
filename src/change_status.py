@@ -1,4 +1,4 @@
-from base_fuctions import (
+from src.base_functions import (
     make_url,
     get_data,
     data_to_js,
@@ -41,26 +41,23 @@ def get_change_status_data(instrument_code: str) -> dict:
         api_url = make_url(base_url, instrument_code)
 
         # Step 2: Fetch the raw data from the API.
-        raw_data = get_data(api_url)
+        data = get_data(api_url)
 
         # Step 3: Parse the raw data into a JSON format with the key 'preparedData'.
-        parsed_data = data_to_js(raw_data, 'instrumentState')
+        parsed_data = data_to_js(data, 'instrumentState')
 
         # Step 4: Convert the parsed JSON data into a Pandas DataFrame.
-        data_frame = js_to_df(parsed_data)
-        data_frame = add_datetime_column(data_frame)
+        data = js_to_df(parsed_data)
+        data = add_datetime_column(data)
         # Step 6: Remove unnecessary columns from the DataFrame for better clarity.
-        cleaned_data_frame = remove_columns(data_frame, columns_to_remove)
         # Step 7: Rename columns to improve readability.
-        cleaned_data_frame.to_csv('./majed.csv')
+
         # column_renames = {"sentDateTime_Gregorian": "DateTime"}
-        # renamed_data_frame = rename_columns(cleaned_data_frame, column_renames)
+        # renamed_data = rename_columns(cleaned_data, column_renames)
 
         # Step 8: Convert the cleaned DataFrame back into JSON format.
-        final_json_data = df_to_js(cleaned_data_frame)
-
         # Return the final JSON data after processing.
-        return final_json_data
+        return df_to_js(remove_columns(data, columns_to_remove))
 
     # Handle common errors with meaningful messages.
     except ConnectionError:

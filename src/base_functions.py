@@ -1,11 +1,12 @@
+import json
 from datetime import datetime
 
 import requests
 import pandas as pd
-import tools
 
-pd.set_option('display.max_colwidth', None)
-pd.set_option('display.expand_frame_repr', False)
+
+# pd.set_option('display.max_colwidth', None)
+# pd.set_option('display.expand_frame_repr', False)
 
 
 # Utility Functions
@@ -37,7 +38,7 @@ def get_data(api_url: str) -> dict:
     try:
         response = requests.get(api_url)
         response.raise_for_status()  # Raise an error for non-200 status codes
-        return response.json()
+        return json.loads(response.text)
     except requests.exceptions.RequestException as e:
         print(f"An error occurred while fetching data: {e}")
         return None
@@ -158,7 +159,9 @@ def update_column_values(df: pd.DataFrame, column_name: str, new_value):
 
     return df
 
+
 def add_datetime_column(df):
     # Convert dEven and hEven to strings and pad hEven to ensure it's 6 digits
-    df['datetime'] = df.apply(lambda row: datetime.strptime(f"{row['dEven']}{str(row['hEven']).zfill(6)}", '%Y%m%d%H%M%S'), axis=1)
+    df['datetime'] = df.apply(lambda row: datetime.strptime(
+        f"{row['dEven']}{str(row['hEven']).zfill(6)}", '%Y%m%d%H%M%S'), axis=1)
     return df

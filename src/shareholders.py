@@ -5,11 +5,10 @@ from src.base_functions import (
     js_to_df,
     df_to_js,
     remove_columns,
-    update_column_values,
 )
 
 
-def get_statistics_data(instrument_code: str) -> dict:
+def get_shareholders_data(instrument_code: str) -> dict:
     """
     Fetches and processes notification data from a remote API based on the provided instrument code.
 
@@ -25,15 +24,13 @@ def get_statistics_data(instrument_code: str) -> dict:
     """
 
     # Base URL for the API to fetch prepared data.
-    base_url = "https://cdn.tsetmc.com/api/MarketData/GetInstrumentStatistic"
+    base_url = "https://cdn.tsetmc.com/api/Shareholder/GetInstrumentShareHolderLast"
 
     # List of columns to remove from the final DataFrame as they are unnecessary.
     columns_to_remove = [
-        "dataType",
+        "shareHolderID",
         "dEven",
-        "partitionCode",
     ]
-
     try:
         # Step 1: Generate the complete API URL using the instrument code.
         api_url = make_url(base_url, instrument_code)
@@ -42,15 +39,18 @@ def get_statistics_data(instrument_code: str) -> dict:
         data = get_data(api_url)
 
         # Step 3: Parse the raw data into a JSON format with the key 'preparedData'.
-        data = data_to_js(data, 'instrumentStatistic')
+        data = data_to_js(data, 'shareHolder')
 
         # Step 4: Convert the parsed JSON data into a Pandas DataFrame.
         data = js_to_df(data)
 
         # Step 6: Remove unnecessary columns from the DataFrame for better clarity.
         data = remove_columns(data, columns_to_remove)
-        data=update_column_values(data,'insCode',instrument_code)
 
+        # Step 7: Rename columns to improve readability.
+        # column_renames = {"sentDateTime_Gregorian": "DateTime"}
+        # renamed_data_frame = rename_columns(cleaned_data_frame, column_renames)
+        # cleaned_data_frame.to_csv('./majed.csv')
         # Step 8: Convert the cleaned DataFrame back into JSON format.
         data = df_to_js(data)
 
@@ -68,3 +68,5 @@ def get_statistics_data(instrument_code: str) -> dict:
         raise ValueError(
             f"An unexpected error occurred: {e}. Please check your inputs and ensure everything is in order.")
 
+
+get_shareholders_data('33293588228706998')
