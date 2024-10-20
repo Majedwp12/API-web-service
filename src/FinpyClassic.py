@@ -733,21 +733,19 @@ def Get_RI_History(stock='خودرو', start_date='1400-01-01', end_date='1401-0
     df_RI_tab = df_RI_tab.reset_index()
     # determining week days:
     df_RI_tab['Date'] = pd.to_datetime(df_RI_tab['Date'], errors='coerce')
-    df_RI_tab['Weekday'] = df_RI_tab['Date'].dt.weekday
-    df_RI_tab['Weekday'] = df_RI_tab['Weekday'].apply(lambda x: calendar.day_name[x])
-    df_RI_tab['J-Date'] = df_RI_tab['Date'].apply(lambda x: str(jdatetime.date.fromgregorian(date=x.date())))
+    # Instead of using 'jdatetime.date.fromgregorian' directly inside the DataFrame, convert the dates first:
+    df_RI_tab['J-Date'] = df_RI_tab['Date'].apply(lambda x: jdatetime.date.fromgregorian(date=x.date()).isoformat())
     df_RI_tab.set_index(df_RI_tab['J-Date'], inplace=True)
     df_RI_tab = df_RI_tab.set_index('J-Date')
     # rearrange columns:
     df_RI_tab = df_RI_tab[
-        ['Date', 'Weekday', 'No_Buy_R', 'No_Buy_I', 'No_Sell_R', 'No_Sell_I', 'Vol_Buy_R', 'Vol_Buy_I', 'Vol_Sell_R',
+        ['Date', 'No_Buy_R', 'No_Buy_I', 'No_Sell_R', 'No_Sell_I', 'Vol_Buy_R', 'Vol_Buy_I', 'Vol_Sell_R',
          'Vol_Sell_I',
          'Val_Buy_R', 'Val_Buy_I', 'Val_Sell_R', 'Val_Sell_I', 'Ticker', 'Name', 'Market']]
     cols = ['No_Buy_R', 'No_Buy_I', 'No_Sell_R', 'No_Sell_I', 'Vol_Buy_R', 'Vol_Buy_I', 'Vol_Sell_R', 'Vol_Sell_I',
             'Val_Buy_R', 'Val_Buy_I', 'Val_Sell_R', 'Val_Sell_I']
     df_RI_tab[cols] = df_RI_tab[cols].apply(pd.to_numeric, axis=1)
-    if (not show_weekday):
-        df_RI_tab.drop(columns=['Weekday'], inplace=True)
+
     if (not double_date):
         df_RI_tab.drop(columns=['Date'], inplace=True)
     # slice requested time window:
@@ -1552,15 +1550,9 @@ def Get_CWPI_History(start_date='1395-01-01', end_date='1400-12-29', ignore_date
 ################################################################################################################################################################################
 ################################################################################################################################################################################
 
-def Get_EWPI_History(start_date='1395-01-01', end_date='1400-12-29', ignore_date=False, just_adj_close=False,
-                     show_weekday=False, double_date=False):
-    """
-    EWPI: Equal-Weighted Price Index = شاخص قیمت (هم وزن)
-    دریافت سابقه شاخص قیمت هم وزن در روزهای معاملاتی بین تاریخ شروع و پایان
-    قابلیت دریافت همه سابقه شاخص قیمت هم وزن بدون توجه به تاریخ شروع و پایان
-    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
-    قابلیت دریافت فقط مقدار پایانی روز برای شاخص قیمت هم وزن
-    """
+def Get_EWPI_History(start_date='1395-01-01', end_date='1400-12-29', ignore_date=False, just_adj_close=True,
+                    show_weekday=False, double_date=False):
+
     # check date validity --------------------------------------------------------------------------------------------------------------
     if (not ignore_date):
         start_date = __Check_JDate_Validity__(start_date, key_word="'START'")
@@ -1576,27 +1568,23 @@ def Get_EWPI_History(start_date='1395-01-01', end_date='1400-12-29', ignore_date
         if (start > end):
             print('Start date must be a day before end date!')
             return
-    # get sector web-id ---------------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------------------------------
     sector_web_id = 8384385859414435
     # get only close chart data for sector index:
-    r_cl = requests.get(f'http://tsetmc.com/tsev2/chart/data/Index.aspx?i={sector_web_id}&t=value', headers=headers)
-    df_sector_cl = pd.DataFrame(r_cl.text.split(';'))
-    columns = ['J-Date', 'Adj Close']
-    print(df_sector_cl[0].str.split(",", expand=True))
-    df_sector_cl[columns] = df_sector_cl[0].str.split(",", expand=True)
-    df_sector_cl.drop(columns=[0], inplace=True)
-    df_sector_cl['J-Date'] = df_sector_cl['J-Date'].apply(
-        lambda x: str(jdatetime.date(int(x.split('/')[0]), int(x.split('/')[1]), int(x.split('/')[2]))))
-    df_sector_cl['Date'] = df_sector_cl['J-Date'].apply(
-        lambda x: jdatetime.date(int(x[:4]), int(x[5:7]), int(x[8:])).togregorian())
-    df_sector_cl['Date'] = pd.to_datetime(df_sector_cl['Date'])
+    r_cl = requests.get(f'http://cdn.tsetmc.com/api/Index/GetIndexB2History/{sector_web_id}', headers=headers)
+    df_sector_cl = pd.DataFrame(r_cl.json()['indexB2'])[['dEven', 'xNivInuClMresIbs']]
+    df_sector_cl['dEven'] = df_sector_cl['dEven'].apply(lambda x: str(x))
+    df_sector_cl['dEven'] = df_sector_cl['dEven'].apply(lambda x: x[:4] + '-' + x[4:6] + '-' + x[-2:])
+    df_sector_cl['dEven'] = pd.to_datetime(df_sector_cl['dEven'])
+    df_sector_cl.rename(columns={"dEven": "Date", "xNivInuClMresIbs": "Adj Close"}, inplace=True)
+    df_sector_cl['J-Date'] = df_sector_cl['Date'].apply(lambda x: str(jdatetime.date.fromgregorian(date=x.date())))
     df_sector_cl['Weekday'] = df_sector_cl['Date'].dt.weekday
     df_sector_cl['Weekday'] = df_sector_cl['Weekday'].apply(lambda x: calendar.day_name[x])
     df_sector_cl = df_sector_cl.set_index('J-Date')
     df_sector_cl = df_sector_cl[['Date', 'Weekday', 'Adj Close']]
     df_sector_cl['Adj Close'] = pd.to_numeric(df_sector_cl['Adj Close'])
     if (not just_adj_close):
-        r = requests.get(f'http://www.tsetmc.com/tsev2/chart/data/IndexFinancial.aspx?i={sector_web_id}&t=ph',
+        r = requests.get(f'http://old.tsetmc.com/tsev2/chart/data/IndexFinancial.aspx?i={sector_web_id}&t=ph',
                          headers=headers)
         df_sector = pd.DataFrame(r.text.split(';'))
         columns = ['Date', 'High', 'Low', 'Open', 'Close', 'Volume', 'D']
@@ -1621,6 +1609,7 @@ def Get_EWPI_History(start_date='1395-01-01', end_date='1400-12-29', ignore_date
     if (not ignore_date):
         df_sector_cl = df_sector_cl[start_date:end_date]
     return df_sector_cl
+
 
 
 ################################################################################################################################################################################
@@ -2043,7 +2032,7 @@ def Get_ACT50_History(start_date='1395-01-01', end_date='1400-12-29', ignore_dat
 
 ################################################################################################################################################################################
 ################################################################################################################################################################################
-def Get_MarketWatch(save_excel=False, save_path='D:/FinPy-TSE Data/MarketWatch'):
+def Get_MarketWatch():
     # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # GET MARKET RETAIL AND INSTITUTIONAL DATA
     # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2184,27 +2173,13 @@ def Get_MarketWatch(save_excel=False, save_path='D:/FinPy-TSE Data/MarketWatch')
     final_OB_df = final_OB_df.set_index(['Ticker', 'Day_LL', 'Day_UL', 'OB-Depth'])
     # add Jalali date and time:
     final_OB_df['Download'] = jdatetime_download
-    # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    # SAVE OPTIONS AND RETURNS
-    # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    if (save_excel):
-        try:
-            if (save_path[-1] != '/'):
-                save_path = save_path + '/'
-            mkt_watch_file_name = 'MarketWatch ' + jdatetime.datetime.today().strftime("%Y-%m-%d %H-%M-%S")
-            OB_file_name = 'OrderBook ' + jdatetime.datetime.today().strftime("%Y-%m-%d %H-%M-%S")
-            final_OB_df.to_excel(save_path + OB_file_name + '.xlsx')
-            final_df.to_excel(save_path + mkt_watch_file_name + '.xlsx')
-        except:
-            print(
-                'Save path does not exist, you can handle saving this data by returned dataframe as Excel using ".to_excel()", if you will!')
+
     return final_df, final_OB_df
 
 
 ################################################################################################################################################################################
 ################################################################################################################################################################################
-def __Save_List__(df_data, bourse, farabourse, payeh, detailed_list, save_excel, save_csv,
-                  save_path='D:/FinPy-TSE Data/'):
+def __Save_List__(df_data, bourse, farabourse, payeh, detailed_list):
     # find today's j-date ti use in name of the file
     today_j_date = jdatetime.datetime.now().strftime("%Y-%m-%d")
     # select name:
@@ -2251,26 +2226,6 @@ def __Save_List__(df_data, bourse, farabourse, payeh, detailed_list, save_excel,
                     name = today_j_date + ' stocklist_p'
             else:
                 name = None
-    # ------------------------------------------------
-    # modify save path if necessary:
-    if (save_path[-1] != '/'):
-        save_path = save_path + '/'
-    # save Excel file:
-    if (save_excel):
-        try:
-            df_data.to_excel(save_path + name + '.xlsx')
-            print('File saved in the specificed directory as: ', name + '.xlsx')
-        except:
-            print(
-                'Save path does not exist, you can handle saving this data by returned dataframe as Excel using ".to_excel()", if you will!')
-            # save Excel file:
-    if (save_csv):
-        try:
-            df_data.to_csv(save_path + name + '.csv')
-            print('File saved in the specificed directory as: ', name + '.csv')
-        except:
-            print(
-                'Save path does not exist, you can handle saving this data by returned dataframe as CSV using ".to_csv()", if you will!')
     return
 
 
@@ -2754,7 +2709,7 @@ def __process_price_data__(ticker_no, ticker, r, data_part):
 
 # ----------------------------------------------------------------------------------------------------------------------------------
 # process the data: responses might be duplicate
-def __build_price_panel_seg__(df_response, param, save_excel=True, save_path='D:/FinPy-TSE Data/Price Panel/'):
+def __build_price_panel_seg__(df_response, param):
     # remove empty responses:
     df_response = df_response[df_response['price'] != '']
     # drop duplicate indexes (repetitive indexes)
@@ -2813,13 +2768,7 @@ def __build_price_panel_seg__(df_response, param, save_excel=True, save_path='D:
         # re-arrange again:
         df_history = df_history[['Date', 'Weekday', 'Open', 'High', 'Low', 'Close', 'Final', 'Volume', 'Value', 'No',
                                  'Adj Open', 'Adj High', 'Adj Close', 'Adj Final', 'Ticker', 'Part']]
-        # ----------------------------------------------------------------------------------------------------------------------------------------------
-        # save data in a given directory:
-        if (save_excel):
-            try:
-                df_history.to_excel(save_path + row['Ticker'].strip() + '.xlsx')
-            except:
-                pass
+
         # separate required column for price panel: Adj Final
         df_panel_temp = df_history.reset_index().set_index('Date')
         df_panel_temp = df_panel_temp[[param]]
@@ -2831,23 +2780,12 @@ def __build_price_panel_seg__(df_response, param, save_excel=True, save_path='D:
     return df_panel
 
 
-def Build_PricePanel(stock_list, param='Adj Final', jalali_date=True, save_excel=True,
-                     save_path='D:/FinPy-TSE Data/Price Panel/'):
+def Build_PricePanel(stock_list, param='Adj Final', jalali_date=True):
     if (param not in ['Final', 'Adj Final']):
         print('Invalid Input Error for "param": Valid inputs are "Final" and "Adj Final"')
         return
     segment_size = 25
-    # check save path:
-    if (save_excel):
-        if (save_path[-1] != '/'):
-            save_path = save_path + '/'
-        today_j_date = jdatetime.datetime.now().strftime("%Y-%m-%d")
-        df_save_test = pd.DataFrame({'Stocks': stock_list})
-        try:
-            df_save_test.to_excel(save_path + today_j_date + ' Price Panel' + '.xlsx')
-        except:
-            print('Save path does not exist, Please Enter a Valid Destination Path!')
-            return
+
             # segment data using given segment size:
     segmented_stock_list = [stock_list[i:i + segment_size] for i in range(0, len(stock_list), segment_size)]
     no_segments = len(segmented_stock_list)
@@ -2857,35 +2795,22 @@ def Build_PricePanel(stock_list, param='Adj Final', jalali_date=True, save_excel
         target_stock_list = segmented_stock_list[i]
         # request for data
         clear_output(wait=True)
-        if (save_excel):
-            print('Reading Data : ', f'{round((i) / no_segments * 100, 1)} %', '   Processing and Saving Data : ',
-                  f'{round((i) / no_segments * 100, 1)} %')
-        else:
-            print('Reading Data : ', f'{round((i) / no_segments * 100, 1)} %', '   Processing Data : ',
-                  f'{round((i) / no_segments * 100, 1)} %')
+        print('Reading Data : ', f'{round((i) / no_segments * 100, 1)} %', '   Processing Data : ',
+                f'{round((i) / no_segments * 100, 1)} %')
         text_resp = __get_history_data_group_parallel__(target_stock_list)
         clear_output(wait=True)
-        if (save_excel):
-            print('Reading Data : ', f'{round((i + 1) / no_segments * 100, 1)} %', '   Processing and Saving Data : ',
-                  f'{round((i) / no_segments * 100, 1)} %')
-        else:
-            print('Reading Data : ', f'{round((i + 1) / no_segments * 100, 1)} %', '   Processing Data : ',
-                  f'{round((i) / no_segments * 100, 1)} %')
+        print('Reading Data : ', f'{round((i + 1) / no_segments * 100, 1)} %', '   Processing Data : ',
+                f'{round((i) / no_segments * 100, 1)} %')
         # process the data:
         if (i == 0):
-            df_panel = __build_price_panel_seg__(df_response=text_resp, param=param, save_excel=save_excel,
-                                                 save_path=save_path)
+            df_panel = __build_price_panel_seg__(df_response=text_resp, param=param)
         else:
             df_panel = pd.concat([df_panel,
-                                  __build_price_panel_seg__(df_response=text_resp, param=param, save_excel=save_excel,
-                                                            save_path=save_path)], axis=1)
+                                  __build_price_panel_seg__(df_response=text_resp, param=param)], axis=1)
         clear_output(wait=True)
-        if (save_excel):
-            print('Reading Data : ', f'{round((i + 1) / no_segments * 100, 1)} %', '   Processing and Saving Data : ',
-                  f'{round((i + 1) / no_segments * 100, 1)} %')
-        else:
-            print('Reading Data : ', f'{round((i + 1) / no_segments * 100, 1)} %', '   Processing Data : ',
-                  f'{round((i + 1) / no_segments * 100, 1)} %')
+        
+        print('Reading Data : ', f'{round((i + 1) / no_segments * 100, 1)} %', '   Processing Data : ',
+                f'{round((i + 1) / no_segments * 100, 1)} %')
     # END -----------------------------------------------------------------------------------------------------------------------------------
     # add jalali date and drop date if necessary
     if (jalali_date):
@@ -2893,14 +2818,6 @@ def Build_PricePanel(stock_list, param='Adj Final', jalali_date=True, save_excel
         df_panel['J-Date'] = df_panel['Date'].apply(lambda x: str(jdatetime.date.fromgregorian(date=x.date())))
         df_panel = df_panel.set_index('J-Date')
         df_panel.drop(columns=['Date'], inplace=True)
-    # save options:
-    if (save_excel):
-        today_j_date = jdatetime.datetime.now().strftime("%Y-%m-%d")
-        try:
-            df_panel.to_excel(save_path + today_j_date + ' Price Panel' + '.xlsx')
-        except:
-            print(
-                'Save path does not exist, you can handle saving this data by returned dataframe as Excel using ".to_excel()", if you will!')
     # final messages to user: time of running:
     end_time = time.time()
     print(str(int(round(end_time - start_time, 0))) + ' Seconds Took to Gather and Process Your Requested Data')
@@ -2910,8 +2827,7 @@ def Build_PricePanel(stock_list, param='Adj Final', jalali_date=True, save_excel
 ################################################################################################################################################################################
 ################################################################################################################################################################################
 
-def Get_60D_PriceHistory(stock_list, adjust_price=True, show_progress=True, save_excel=False,
-                         save_path='D:/FinPy-TSE Data/MarketWatch'):
+def Get_60D_PriceHistory(stock_list, adjust_price=True, show_progress=True):
     # read stocks IDs from TSE webpages:
     def get_data_optimaize(codes):
         tracemalloc.start()
@@ -3107,18 +3023,6 @@ def Get_60D_PriceHistory(stock_list, adjust_price=True, show_progress=True, save
         clear_output(wait=True)
         print('Progress : 100 % , Done in ' + str(int(round(end_time - start_time, 0))) + ' seconds!')
 
-    if (save_excel):
-        # modify save path if necessary:
-        if (save_path[-1] != '/'):
-            save_path = save_path + '/'
-        today_j_date = jdatetime.datetime.now().strftime("%Y-%m-%d")
-        name = today_j_date + ' 60D_History.xlsx'
-        try:
-            hist_60_days.to_excel(save_path + name)
-            print('File saved in the specificed directory as: ', name)
-        except:
-            print(
-                'Save path does not exist, you can handle saving this data by returned dataframe as Excel using ".to_excel()", if you will!')
     return hist_60_days, adj_info_df, missing_stocks_list
 
 
@@ -3168,5 +3072,3 @@ def Get_ShareHoldersInfo(ticker='خودرو'):
     df_sh.set_index(['Ticker', 'Market', 'Name'], inplace=True)
     return df_sh
 
-
-# print(Build_PricePanel(['خودرو', 'فولاد', 'خساپا'], param='Adj Final', jalali_date=True, save_excel=False))
