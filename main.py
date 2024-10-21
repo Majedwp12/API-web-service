@@ -19,9 +19,11 @@ from src.FinpyClassic import (
 
 )
 from src.assembly_announcement import get_assembly_announcement_data
+from src.balance_sheet import get_balance_sheet_data
 from src.change_status import get_change_status_data
 from src.introduction import get_introduction_data
 from src.notifications import get_notifications_data
+from src.profit_and_loss import get_profit_and_loss_data
 from src.realـlegal import get_realـlegal_data
 from src.shareholders import get_shareholders_data
 from src.supervisor_message import get_supervisor_message_data
@@ -2266,6 +2268,124 @@ async def api_get_assembly_announcement_data(
 
         # Call the function to get assembly announcement data
         result = get_assembly_announcement_data(instrument_code)
+
+        # Log successful data processing
+        logger.info(
+            f"Successfully processed data for instrument code: {instrument_code}")
+
+        # Return the processed data in JSON format
+        return result
+
+    # Handle connection errors and data processing errors
+    except ConnectionError as e:
+        # Log connection error
+        logger.error(
+            f"Connection error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    except ValueError as e:
+        # Log data processing error
+        logger.warning(f"Invalid data or instrument not found: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(
+            f"Unexpected error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Unexpected error: {str(e)}")
+@app.get("/GET/profitloss-data",
+         tags=["Assembly Announcement Data"],
+         summary="Retrieve Processed Assembly Announcement Data",
+         description="Fetch and process assembly announcement data for the given instrument code.",
+         responses={
+             200: {
+                 "description": "Returns processed assembly announcement data based on the instrument code",
+                 "content": {
+                     "application/json": {
+                         "example": {}
+                     }
+                 }
+             },
+             404: {"description": "Instrument not found or invalid data"},
+             500: {"description": "Internal Server Error"}
+         })
+async def api_get_profit_and_loss_data(
+        instrument_code: str = Query('33293588228706998',
+                                     description="The code of the financial instrument")):
+    """
+    API endpoint to fetch and process assembly announcement data for a given instrument code.
+
+    - **instrument_code**: The unique code of the financial instrument.
+    """
+    try:
+        # Log the instrument code being processed
+        logger.info(
+            f"Fetching assembly announcement data for instrument code: {instrument_code}")
+
+        # Call the function to get assembly announcement data
+        result = get_profit_and_loss_data(instrument_code)
+
+        # Log successful data processing
+        logger.info(
+            f"Successfully processed data for instrument code: {instrument_code}")
+
+        # Return the processed data in JSON format
+        return result
+
+    # Handle connection errors and data processing errors
+    except ConnectionError as e:
+        # Log connection error
+        logger.error(
+            f"Connection error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    except ValueError as e:
+        # Log data processing error
+        logger.warning(f"Invalid data or instrument not found: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(
+            f"Unexpected error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+
+
+@app.get("/GET/balance-sheet",
+         tags=["Assembly Announcement Data"],
+         summary="Retrieve Processed Assembly Announcement Data",
+         description="Fetch and process assembly announcement data for the given instrument code.",
+         responses={
+             200: {
+                 "description": "Returns processed assembly announcement data based on the instrument code",
+                 "content": {
+                     "application/json": {
+                         "example": {}
+                     }
+                 }
+             },
+             404: {"description": "Instrument not found or invalid data"},
+             500: {"description": "Internal Server Error"}
+         })
+async def api_get_balance_sheet_data(
+        instrument_code: str = Query('33293588228706998',
+                                     description="The code of the financial instrument")):
+    """
+    API endpoint to fetch and process assembly announcement data for a given instrument code.
+
+    - **instrument_code**: The unique code of the financial instrument.
+    """
+    try:
+        # Log the instrument code being processed
+        logger.info(
+            f"Fetching assembly announcement data for instrument code: {instrument_code}")
+
+        # Call the function to get assembly announcement data
+        result = get_balance_sheet_data(instrument_code)
 
         # Log successful data processing
         logger.info(
