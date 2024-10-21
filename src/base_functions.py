@@ -165,3 +165,11 @@ def add_datetime_column(df):
     df['datetime'] = df.apply(lambda row: datetime.strptime(
         f"{row['dEven']}{str(row['hEven']).zfill(6)}", '%Y%m%d%H%M%S'), axis=1)
     return df
+def convert_datetime_in_dataframe(df, date_column, time_column):
+    # ایجاد ستون جدید 'datetime' با استفاده از فرمت تبدیل شده
+    df['datetime'] = df.apply(lambda row: f"{row[date_column].replace('/', '-')}T{row[time_column]}:00", axis=1)
+    
+    # حذف دو ستون قدیمی تاریخ و زمان
+    df = df.drop([date_column, time_column], axis=1)
+    
+    return df
