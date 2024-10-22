@@ -107,7 +107,6 @@ def get_profit_and_loss_data(instrument_code: str) -> DataFrame:
                             'date': [date],  # Converted date
                             'dateDesc': [date_col]  # Store individual dateDesc
                         })], ignore_index=True)
-                        print(tabels)
             except:
                 pass
 

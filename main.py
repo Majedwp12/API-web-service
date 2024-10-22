@@ -1,3 +1,4 @@
+import numpy as np
 from fastapi import HTTPException, Query
 import logging
 from fastapi import HTTPException, Query, APIRouter
@@ -19,7 +20,9 @@ from src.FinpyClassic import (
 
 )
 from src.assembly_announcement import get_assembly_announcement_data
+from src.assembly_decisions import get_assembly_decisions_data
 from src.balance_sheet import get_balance_sheet_data
+from src.board_of_directors import get_board_members
 from src.change_status import get_change_status_data
 from src.introduction import get_introduction_data
 from src.notifications import get_notifications_data
@@ -2385,7 +2388,80 @@ async def api_get_balance_sheet_data(
             f"Fetching assembly announcement data for instrument code: {instrument_code}")
 
         # Call the function to get assembly announcement data
-        result = get_balance_sheet_data(instrument_code)
+        df = get_balance_sheet_data(instrument_code)
+        result=df.to_dict(orient='index')
+        # Log successful data processing
+        logger.info(
+            f"Successfully processed data for instrument code: {instrument_code}")
+
+        # Return the processed data in JSON format
+        return result
+
+    # Handle connection errors and data processing errors
+    except ConnectionError as e:
+        # Log connection error
+        logger.error(
+            f"Connection error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    except ValueError as e:
+        # Log data processing error
+        logger.warning(f"Invalid data or instrument not found: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(
+            f"Unexpected error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+@app.get("/GET/board-members",
+         tags=["Board Members"],
+         summary="Fetch and process board members data",
+         description="This API endpoint fetches and processes the board members data for a given instrument code. The response includes details such as the member's name, education degree, designation, and publish date of the announcement.",
+         responses={
+             200: {
+                 "description": "Successfully retrieved board members data",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "0": {
+                                 "Agent": "فاقد نماینده",
+                                 "EducationDegree": "دکترا",
+                                 "Charged": "موظف",
+                                 "NationalCode_RegisterNumber": "1861135955",
+                                 "MemberName": "جواد شکرخواه",
+                                 "PreviuosAgent": "فاقد نماینده",
+                                 "PreviousMemberName": "جواد شکرخواه",
+                                 "Designation": "عضو هیئت مدیره",
+                                 "Title": "معرفی /تغییر در ترکیب اعضای هیئت مدیره/مدیر عامل",
+                                 "PublishDate": 20240810
+                             }
+                         }
+                     }
+                 }
+             },
+             404: {"description": "Instrument not found or invalid data"},
+             500: {"description": "Internal Server Error"}
+         })
+async def api_board_members_data(
+        instrument_code: str = Query('33293588228706998',
+                                     description="The code of the financial instrument")):
+    """
+    API endpoint to fetch and process board members data for a given instrument code.
+
+    - **instrument_code**: The unique code of the financial instrument.
+    """
+    try:
+        # Log the instrument code being processed
+        logger.info(
+            f"Fetching board members data for instrument code: {instrument_code}")
+
+        # Call the function to get board members data
+        df = get_board_members(instrument_code)
+        result = df.to_dict(orient='index')
 
         # Log successful data processing
         logger.info(
@@ -2395,6 +2471,75 @@ async def api_get_balance_sheet_data(
         return result
 
     # Handle connection errors and data processing errors
+    except ConnectionError as e:
+        # Log connection error
+        logger.error(
+            f"Connection error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    except ValueError as e:
+        # Log data processing error
+        logger.warning(f"Invalid data or instrument not found: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(
+            f"Unexpected error for instrument code {instrument_code}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+import numpy as np
+from fastapi import HTTPException
+
+@app.get("/GET/assembly-decisions",
+         tags=[""],
+         summary="",
+         description="",
+         responses={
+             200: {
+                 "description": "",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                         }
+                     }
+                 }
+             },
+             404: {"description": "Instrument not found or invalid data"},
+             500: {"description": "Internal Server Error"}
+         })
+async def api_get_assembly_decisions_data(
+        instrument_code: str = Query('33293588228706998',
+                                     description="The code of the financial instrument")):
+    """
+    API endpoint to fetch and process board members data for a given instrument code.
+
+    - **instrument_code**: The unique code of the financial instrument.
+    """
+    try:
+        # Log the instrument code being processed
+        logger.info(
+            f"Fetching board members data for instrument code: {instrument_code}")
+
+        # Call the function to get board members data
+        df = get_assembly_decisions_data(int(instrument_code))
+
+        # Replace invalid float values
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        df.fillna(0, inplace=True)  # Replace NaN with 0 or any other suitable value
+
+        # Convert DataFrame to dictionary
+        result = df.to_dict(orient='index')
+
+        # Log successful data processing
+        logger.info(
+            f"Successfully processed data for instrument code: {instrument_code}")
+
+        # Return the processed data in JSON format
+        return result
+
     except ConnectionError as e:
         # Log connection error
         logger.error(

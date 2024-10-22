@@ -1451,6 +1451,17 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-nginx"
+version = "1.5.7"
+description = "Create and modify nginx serverblock configs in Python"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-nginx-1.5.7.tar.gz", hash = "sha256:f70d2b3cee028b0b328e655d9e1695787f38416845785bc8a5813d25ba290013"},
+    {file = "python_nginx-1.5.7-py2.py3-none-any.whl", hash = "sha256:86020409ee8e264d51e56919f48a4ff11ec585c284494281d20ba3db92ecd53b"},
+]
+
+[[package]]
 name = "pytz"
 version = "2024.2"
 description = "World timezone definitions, modern and historical"
@@ -1743,4 +1754,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e98c94484bb5a54db88eee0210b6a83c3f2003e142cddcffe4de62e1c4e13916"
+content-hash = "1e833f71c17534779963ba9bf73b910208ab4911f1ae68763463a93e6d555ec3"

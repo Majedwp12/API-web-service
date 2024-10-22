@@ -1,52 +1,86 @@
-# تصمیمات مجمع
-from src.base_functions import (
-    make_url,
-    get_data,
-    data_to_js,
-    js_to_df,
-    remove_columns,
-    df_to_js,
-    rename_columns,
-)
+import json
+import xml.etree.ElementTree as ET
+import pandas as pd
+import requests
 
 
-def get_assembly_decisions_data(instrument_code: str) -> dict:
-
-    # Base URL for the API to fetch prepared data.
-    base_url = "https://cdn.tsetmc.com/api/Codal/GetStatementContentByInsCode/14/0/-1"
-
-    # List of columns to remove from the final DataFrame as they are unnecessary.
-    columns_to_remove = [
-        "publishDateTime_Gregorian",
-        'publishDateTime_DEven',
-        'reportSubType',
-        'pageID',
-    ]
-
+def get_assembly_decisions_data(ins_code):
     try:
-        api_url = make_url(base_url, instrument_code)
-        data = get_data(api_url)
-        data = data_to_js(data, 'statemetnContent')
-        data = js_to_df(data)
-        data = remove_columns(data, columns_to_remove)
-        column_renames = {"sentDateTime_Gregorian": "DateTime"}
-        data = rename_columns(data, column_renames)
-        data.to_csv('./majed.csv')
-        data = df_to_js(data)
-        return data
+        # Request to fetch the data
+        res = requests.get(f'https://cdn.tsetmc.com/api/Codal/GetStatementContentByInsCode/14/0/-1/{ins_code}')
+        res.raise_for_status()  # Will raise an exception for HTTP errors
 
-    # Handle common errors with meaningful messages.
-    except ConnectionError:
-        raise ConnectionError(
-            "Failed to connect to the API. Please check your internet connection or the API URL.")
+        new_data = res.json()
+        # Check if 'statemetnContent' exists in the JSON data
+        if 'statemetnContent' not in new_data:
+            raise ValueError("Missing 'statemetnContent' in the JSON data.")
 
-    except KeyError as e:
-        raise ValueError(
-            f"Key error in processing data: {e}. Ensure the required columns exist in the API response.")
+        extended_extracted_data = []
 
-    except Exception as e:
-        raise ValueError(
-            f"An unexpected error occurred: {e}. Please check your inputs and ensure everything is in order.")
+        # Loop through the statement content and extract the required fields
+        for statement in new_data['statemetnContent']:
+            content_xml = statement.get('content', None)
+            publish_date = statement.get('publishDateTime_DEven', None)
+            title = statement.get('title', None)
+
+            if content_xml is None:
+                continue  # Skip if no content XML available
+
+            try:
+                # Parse the XML content
+                root = ET.fromstring(content_xml)
+
+                # Extract shareholders and presidium members if present
+                shareholders = root.find('AssemblyShareHolder')
+                presidium = root.find('Presidium')
+
+                # Extract shareholders details
+                if shareholders is not None:
+                    for shareholder in shareholders:
+                        extended_extracted_data.append({
+                            'Title': title,
+                            'PublishDate': publish_date,
+                            'Type': 'Shareholder',
+                            'Name': shareholder.find('td[1]').text if shareholder.find('td[1]') is not None else None,
+                            'Shares': shareholder.find('td[2]').text if shareholder.find('td[2]') is not None else None,
+                            'Percentage': shareholder.find('td[3]').text if shareholder.find(
+                                'td[3]') is not None else None
+                        })
+
+                # Extract presidium members details
+                if presidium is not None:
+                    for member in presidium:
+                        extended_extracted_data.append({
+                            'Title': title,
+                            'PublishDate': publish_date,
+                            'Type': 'Presidium Member',
+                            'Member': member.text if member is not None else None
+                        })
 
 
-get_assembly_announcement_data('33293588228706998')
+            except ET.ParseError as e:
+                print(f"Error parsing XML content for ins_code {ins_code}: {e}")
+                continue
+
+        # If no data is extracted, return an empty DataFrame
+        if not extended_extracted_data:
+            print(f"No board members found for ins_code {ins_code}.")
+            return pd.DataFrame()
+
+        # Convert list of dictionaries to DataFrame
+        df_extended_extracted = pd.DataFrame(extended_extracted_data)
+        return df_extended_extracted
+
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP request error: {e}")
+        return pd.DataFrame()
+
+    except ValueError as e:
+        print(f"Value error: {e}")
+        return pd.DataFrame()
+
+
+# Example usage
+# ins_code = 71483646978964608
+# df = extract_shareholders_and_presidium(ins_code)
+# print(df)

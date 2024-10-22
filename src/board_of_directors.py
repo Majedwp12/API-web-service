@@ -1,67 +1,71 @@
-#هیئت مدیره
-from src.base_functions import make_url, get_data, data_to_js, js_to_df, add_datetime_column, remove_columns, df_to_js, \
-    rename_columns
-def get_board_of_directors_data(instrument_code: str) -> dict:
-    """
-    Fetches and processes notification data from a remote API based on the provided instrument code.
+import requests
+import json
+import xml.etree.ElementTree as ET
+import pandas as pd
 
-    Args:
-        instrument_code (str): The code of the financial instrument to fetch notifications for.
-
-    Returns:
-        dict: A dictionary containing processed notification data with cleaned column names and specific columns removed.
-
-    Raises:
-        ValueError: If any step in the process encounters a problem with the input data.
-        ConnectionError: If there is an issue reaching the external API.
-    """
-
-    # Base URL for the API to fetch prepared data.
-    base_url = "https://cdn.tsetmc.com/api/Codal/GetStatementContentByInsCode/12/0/-1"
-
-    # List of columns to remove from the final DataFrame as they are unnecessary.
-    columns_to_remove = [
-        "publishDateTime_Gregorian",
-        'publishDateTime_DEven',
-        'reportSubType',
-        'pageID',
-    ]
-
+def get_board_members(ins_code):
     try:
-        # Step 1: Generate the complete API URL using the instrument code.
-        api_url = make_url(base_url, instrument_code)
-        # Step 2: Fetch the raw data from the API.
-        data = get_data(api_url)
+        # Request to fetch the data
+        res = requests.get(f'https://cdn.tsetmc.com/api/Codal/GetStatementContentByInsCode/12/0/-1/{ins_code}')
+        res.raise_for_status()  # Will raise an exception for HTTP errors
 
-        # Step 3: Parse the raw data into a JSON format with the key 'preparedData'.
-        data = data_to_js(data, 'statemetnContent')
+        data = res.json()
 
-        # Step 4: Convert the parsed JSON data into a Pandas DataFrame.
-        data = js_to_df(data)
-        # Step 6: Remove unnecessary columns from the DataFrame for better clarity.
-        data = remove_columns(data, columns_to_remove)
-        column_renames = {"sentDateTime_Gregorian": "DateTime"}
-        data = rename_columns(data, column_renames)
-        data.to_csv('./majed.csv')
-        # Step 8: Convert the cleaned DataFrame back into JSON format.
-        data = df_to_js(data)
-        # Return the final JSON data after processing.
-        return data
+        # Check if 'statemetnContent' key exists in the JSON data
+        if 'statemetnContent' not in data:
+            raise ValueError("Missing 'statemetnContent' in the response data.")
 
-    # Handle common errors with meaningful messages.
-    except ConnectionError:
-        raise ConnectionError(
-            "Failed to connect to the API. Please check your internet connection or the API URL.")
+        extracted_data = []
 
-    except KeyError as e:
-        raise ValueError(
-            f"Key error in processing data: {e}. Ensure the required columns exist in the API response.")
+        # Loop through the statement content and extract the required fields
+        for statement in data['statemetnContent']:
+            content_xml = statement.get('content', None)
+            publish_date = statement.get('publishDateTime_DEven', None)
+            title = statement.get('title', None)
 
-    except Exception as e:
-        raise ValueError(
-            f"An unexpected error occurred: {e}. Please check your inputs and ensure everything is in order.")
+            if content_xml is None:
+                continue  # Skip if no content XML available
 
+            try:
+                # Parse the XML content
+                root = ET.fromstring(content_xml)
+                board_members = root.find('BoardMembers')
 
+                if board_members is None:
+                    continue  # Skip if no board members data in the XML
 
+                # Extract BoardMember information into a list of dictionaries
+                for member in board_members:
+                    extracted_data.append({
+                        'Agent': member.find('Agent').text if member.find('Agent') is not None else None,
+                        'EducationDegree': member.find('EducationDegree').text if member.find('EducationDegree') is not None else None,
+                        'Charged': member.find('Charged').text if member.find('Charged') is not None else None,
+                        'NationalCode_RegisterNumber': member.find('NationalCode_RegisterNumber').text if member.find('NationalCode_RegisterNumber') is not None else None,
+                        'MemberName': member.find('MemberName').text if member.find('MemberName') is not None else None,
+                        'PreviuosAgent': member.find('PreviuosAgent').text if member.find('PreviuosAgent') is not None else None,
+                        'PreviousMemberName': member.find('PreviousMemberName').text if member.find('PreviousMemberName') is not None else None,
+                        'Designation': member.find('Designation').text if member.find('Designation') is not None else None,
+                        'Title': title,
+                        'PublishDate': publish_date
+                    })
 
-get_board_of_directors_data('33293588228706998')
+            except ET.ParseError as e:
+                print(f"Error parsing XML content for ins_code {ins_code}: {e}")
+                continue
+
+        if not extracted_data:
+            print(f"No board members found for ins_code {ins_code}.")
+            return pd.DataFrame()
+
+        # Convert list of dictionaries to DataFrame
+        df_extracted = pd.DataFrame(extracted_data)
+        return df_extracted
+
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP request error: {e}")
+        return pd.DataFrame()
+
+    except ValueError as e:
+        print(f"Value error: {e}")
+        return pd.DataFrame()
+
