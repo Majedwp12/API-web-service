@@ -34,67 +34,61 @@ from src.statistics import get_statistics_data
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
-
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@app.get("/GET/marketwatch", tags=["Market"], responses={
-    200: {
-        "description": "Market watch data retrieved successfully",
-        "content": {
-            "application/json": {
-                "example": {
-                    "final": [
-                        {
-                            "Ticker": "غمینو",
-                            "Trade Type": "تابلو",
-                            "Time": "11:37:58",
-                            "Open": 4340.0,
-                            "High": 4400.0,
-                            "Low": 4326.0,
-                            "Close": 4326.0,
-                            "Final": 4370.0,
-                            "Close(%)": -2.98,
-                            "Final(%)": -2.0,
-                            "Day_UL": 4592.0,
-                            "Day_LL": 4326.0,
-                            "Value": 10236424047.0,
-                            "BQ-Value": 0,
-                            "SQ-Value": 8675455572,
-                            "BQPC": 0,
-                            "SQPC": 542215973,
-                            "Volume": 2360824.0,
-                            "Vol_Buy_R": 606605.0,
-                            "Vol_Buy_I": 1754219.0,
-                            "Vol_Sell_R": 2119679.0,
-                            "Vol_Sell_I": 241145.0,
-                            "No": 630.0,
-                            "No_Buy_R": 25.0,
-                            "No_Buy_I": 4.0,
-                            "No_Sell_R": 58.0,
-                            "No_Sell_I": 2.0,
-                            "Name": "شرکت صنایع غذایی مینو شرق",
-                            "Market": "فرابورس",
-                            "Sector": "محصولات غذایی و آشامیدنی به جز قند و شکر",
-                            "Share-No": 2700000000.0,
-                            "Base-Vol": 3264418.0,
-                            "Market Cap": 11799000000000.0,
-                            "EPS": 864.0,
-                            "Download": "1403-07-29 11:45:09"
-                        }
-                    ]
+@app.get("/GET/marketwatch",tags=["Market"],description="جدول دیده بان بازار",responses={
+        200: {
+            "description": "Market watch data retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "final": [
+                            {
+                                "Ticker": "tiker name",
+                                "Trade Type": "تابلو",
+                                "Time": "00:00:00",
+                                "Open": 4340.0,
+                                "High": 4400.0,
+                                "Low": 4326.0,
+                                "Close": 4326.0,
+                                "Final": 4370.0,
+                                "Close(%)": -2.98,
+                                "Final(%)": -2.0,
+                                "Day_UL": 4592.0,
+                                "Day_LL": 4326.0,
+                                "Value": 10236424047.0,
+                                "BQ-Value": 0,
+                                "SQ-Value": 8675455572,
+                                "BQPC": 0,
+                                "SQPC": 542215973,
+                                "Volume": 2360824.0,
+                                "Vol_Buy_R": 606605.0,
+                                "Vol_Buy_I": 1754219.0,
+                                "Vol_Sell_R": 2119679.0,
+                                "Vol_Sell_I": 241145.0,
+                                "No": 630.0,
+                                "No_Buy_R": 25.0,
+                                "No_Buy_I": 4.0,
+                                "No_Sell_R": 58.0,
+                                "No_Sell_I": 2.0,
+                                "Name": "شرکت صنایع غذایی مینو شرق",
+                                "Market": "فرابورس",
+                                "Sector": "محصولات غذایی و آشامیدنی به جز قند و شکر",
+                                "Share-No": 2700000000.0,
+                                "Base-Vol": 3264418.0,
+                                "Market Cap": 11799000000000.0,
+                                "EPS": 864.0,
+                                "Download": "1403-07-29 11:45:09"
+                            }
+                        ]
+                    }
                 }
             }
-        }
-    },
-    500: {"description": "Server error"}
-})
-async def api_get_marketwatch(
-        save_excel: bool = Query(
-            False, description="Save the output as Excel file"),
-        save_path: str = Query('D:/FinPy-TSE Data/MarketWatch', description="Path to save the Excel file")):
+        },
+        500: {"description": "Server error"}
+    })
+async def api_get_marketwatch():
     """
     Fetch the market watch data and optionally save it as an Excel file.
 
@@ -104,11 +98,11 @@ async def api_get_marketwatch(
     This API retrieves market watch data, processes it, and returns the result in JSON format.
     """
     logger.info(
-        "Market watch data requested with save_excel=%s and save_path=%s", save_excel, save_path)
+        "Market watch data requested with save_excel=%s and save_path=%s",)
 
     try:
         # Fetch market data using Get_MarketWatch function
-        df, ob = Get_MarketWatch(save_excel, save_path)
+        df, ob = Get_MarketWatch()
 
         # Fill missing values and reset indices for both dataframes
         logger.info("Processing DataFrames and replacing NaN values")
@@ -131,7 +125,7 @@ async def api_get_marketwatch(
         logger.error("Error retrieving market watch data: %s", str(e))
         raise HTTPException(status_code=500, detail="Server error: " + str(e))
 
-@app.get("/GET/price-history", tags=["History"], responses={
+@app.get("/GET/price-history", tags=["History"],description="تاریخچه روزانه قیمت یک تماد", responses={
     200: {
         "description": "Successfully retrieved price history",
         "content": {"application/json": {
@@ -152,8 +146,7 @@ async def api_get_marketwatch(
             }
         }},
     },
-    500: {"description": "Server error"}
-})
+    500: {"description": "Server error"}})
 async def api_get_price_history(
         stock: str = Query('خودرو', description="Stock symbol (in Persian)"),
         start_date: str = Query('1400-01-01', description="Start date in Persian format (yyyy-mm-dd)"),
@@ -174,22 +167,22 @@ async def api_get_price_history(
     - **double_date**: Include both Jalali and Gregorian dates.
     """
     logging.info(f"Fetching price history for stock: {stock}, start_date: {start_date}, end_date: {end_date}")
-    
+
     try:
         # Fetching the price history based on provided parameters
         df = get_price_history(stock, start_date, end_date, ignore_date, adjust_price, show_weekday, double_date)
-        
+
         # Resetting the index of the DataFrame for output clarity
         df.reset_index(inplace=True)
-        
+
         logging.info(f"Successfully fetched price history for {stock}")
         return df.to_dict(orient='records')
-    
+
     except Exception as e:
         logging.error(f"Error fetching price history: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@ app.get("/GET/price-history-alt", tags=["History"], responses={
+@ app.get("/GET/price-history-alt", tags=["History"],description='', responses={
     200: {
         "description": "Successfully retrieved price history",
         "content": {"application/json": {"example": [
@@ -257,7 +250,7 @@ async def api_get_price_history_alt(
         # Raise HTTPException for internal server error (500) with the exception details
         raise HTTPException(status_code=500, detail=str(e))
 
-@ app.post("/GET/60d-price-history", tags=["History"], responses={
+@ app.post("/GET/60d-price-history",description='اطاعات قیمتی یک روز برای ۶۰روز', tags=["History"], responses={
     200: {
         "description": "Successfully retrieved 60 days price history",
         "content": {
@@ -330,14 +323,9 @@ async def api_get_60d_price_history(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
 @app.get("/GET/tse-webid",
          tags=["Market"],
-         summary="Retrieve TSE WebID",
-         description="Fetch the TSE WebID for a specific stock symbol in Persian.",
+         description="اطاعات هر نماد به همراه inscode",
          responses={
              200: {
                  "description": "Successfully retrieved TSE WebID",
@@ -392,12 +380,10 @@ async def api_get_tse_webid(stock: str = Query('پترول', description="Stock 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-
-@app.get("/GET/build-market-stocklist", tags=["Market"], responses={
+@app.get("/GET/build-market-stocklist", tags=["Market"],
+         description="اطاعات همه‌نمادها هر بازار ",
+         responses={
     200: {
         "description": "Successfully built the market stock list",
         "content": {"application/json": {
@@ -477,7 +463,7 @@ async def api_build_market_stocklist(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/GET/ri-history", tags=["History"], responses={
+@app.get("/GET/ri-history", tags=["History"],description='تاریخچه اطاعات قیمتی', responses={
     200: {
         "description": "Successfully retrieved RI history",
         "content": {
@@ -572,11 +558,13 @@ async def api_get_ri_history(
         raise HTTPException(
             status_code=500, detail="An error occurred while fetching the RI history")
 
-# Initialize a logger
-logger = logging.getLogger("api_logger")
 
-
-@app.get("/GET/cwi-history", tags=["History"], responses={
+@app.get("/GET/cwi-history",
+         tags=["History"],
+         description='''    دریافت سابقه شاخص کل در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص کل بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته''',
+         responses={
     200: {
         "description": "Successfully retrieved CWI history",
         "content": {
@@ -670,7 +658,13 @@ def is_valid_jalali_date(date_str: str) -> bool:
         return False
 
 
-@app.get("/GET/ewi-history", tags=["History"], responses={
+@app.get("/GET/ewi-history", tags=["History"],
+         description="""
+    دریافت سابقه شاخص هم وزن در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص هم وزن بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    """,
+         responses={
     200: {
         "description": "Successfully retrieved EWI history",
         "content": {
@@ -751,7 +745,13 @@ async def api_get_ewi_history(
             status_code=500, detail="An internal server error occurred. Please try again later.")
 
 
-@app.get("/GET/intraday-trades-history", tags=["Trades"], responses={
+@app.get("/GET/intraday-trades-history", tags=["Trades"],
+         description="""
+    دریافت سابقه ریز معاملات یک سهم در روزهای معاملاتی بین تاریخ شروع و پایان
+    اگر فقط به داده های یک روز مشخص نیاز دارید از تاریخ شروع و پایان یکسان استفاده کنید
+    توجه داشته باشید که معاملات باطل شده نماد در خروجی این تابع نمایش داده نمی شود
+    """,
+         responses={
     200: {
         "description": "Successfully retrieved intraday trades history",
         "content": {
@@ -829,7 +829,7 @@ async def api_get_intraday_trades_history(
             status_code=500, detail="An internal server error occurred. Please try again later.")
 
 
-@app.get("/GET/usd-rial", tags=["Currency"], responses={
+@app.get("/GET/usd-rial", tags=["Currency"],description='نمایش اطلاعات قیمتی دلاردر بازه تاریخ ورودی ' ,responses={
     200: {
         "description": "Successfully retrieved USD to Rial exchange rate history",
         "content": {"application/json": {"example": [{"date": "1400-01-01", "rate": 250000}]}}
@@ -870,14 +870,9 @@ async def api_get_usd_rial(
         # Catch-all for other unexpected errors
         raise HTTPException(status_code=500, detail=str(e))
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
 @app.get("/GET/supervisor-message-data",
          tags=["message"],
-         summary="Retrieve Supervisor Message Data",
-         description="Fetch supervisor message data for a given instrument code.",
+         description="نمایش اطاعات فیلد پیام ناظر",
          responses={
              200: {
                  "description": "Successfully retrieved supervisor message data",
@@ -927,7 +922,15 @@ async def api_get_supervisor_message_data(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/GET/FFI-history", tags=["FFI History"], responses={
+@app.get("/GET/FFI-history", tags=["FFI History"],
+         description="""
+    FFI: Free-Float Index = شاخص شناور آزاد
+    دریافت سابقه شاخص شناور آزاد در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص شناور آزاد بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص شناور آزاد
+    """,
+         responses={
     200: {
         "description": "Successful response with the FFI history",
         "content": {
@@ -989,7 +992,15 @@ async def api_get_ffi_history(
             status_code=500, detail="An error occurred while fetching the FFI history")
 
 
-@app.get("/GET/CWPI-history", tags=["CWPI History"], responses={
+@app.get("/GET/CWPI-history", tags=["CWPI History"],
+         description="""
+    CWPI: Cap-Weighted Price Index = TEPIX = شاخص قیمت (وزنی-ارزشی)
+    دریافت سابقه شاخص قیمت در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص قیمت بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص قیمت
+    """,
+         responses={
     200: {
         "description": "Successful response with the CWPI history",
         "content": {
@@ -1057,7 +1068,9 @@ async def api_get_CWPI_history(
             status_code=500, detail="An error occurred while fetching the CWPI history")
 
 
-@app.get("/GET/EWPI-history", tags=[""], responses={
+@app.get("/GET/EWPI-history", tags=["EWPI History"],
+         description='شاخص قیمتی هم وزن',
+         responses={
     200: {
         "description": "",
         "content": {"application/json": {"example": [{
@@ -1090,7 +1103,15 @@ async def api_get_EWPI_history(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/GET/MKT1I-history", tags=["Market Index"], responses={
+@app.get("/GET/MKT1I-history", tags=["Market Index"],
+         description="""
+    MKT1I: First Market Index = شاخص بازار اول
+    دریافت سابقه شاخص بازار اول بورس در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص بازار اول بورس بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص بازار اول بورس
+    """,
+         responses={
     200: {
         "description": "History of MKT1I (First Market Index)",
         "content": {
@@ -1163,7 +1184,15 @@ async def api_get_MKT1I_history(
             status_code=500, detail="An error occurred while fetching the MKT1I history")
 
 
-@app.get("/GET/MKT2I-history", tags=["Market Index"], responses={
+@app.get("/GET/MKT2I-history", tags=["Market Index"],
+         description="""
+    MKT2I: Second Market Index = شاخص بازار دوم
+    دریافت سابقه شاخص بازار دوم بورس در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص بازار دوم بورس بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص بازار دوم بورس
+    """,
+         responses={
     200: {
         "description": "History of MKT2I (Second Market Index)",
         "content": {
@@ -1239,7 +1268,15 @@ async def api_get_MKT2I_history(
             status_code=500, detail="An error occurred while fetching the MKT2I history")
 
 
-@app.get("/GET/INDI-history", tags=["Industry Index"], responses={
+@app.get("/GET/INDI-history", tags=["Industry Index"],
+         description="""
+    INDI: Industry Index = شاخص صنعت
+    دریافت سابقه شاخص صنعت بورس در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص صنعت بورس بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص صنعت بورس
+    """,
+         responses={
     200: {
         "description": "History of INDI (Industry Index) with open, close, high, low, and adjusted close prices",
         "content": {
@@ -1315,7 +1352,15 @@ async def api_get_INDI_history(
             status_code=500, detail="An error occurred while fetching the INDI history")
 
 
-@app.get("/GET/LCI30-history", tags=["Market Index"], responses={
+@app.get("/GET/LCI30-history", tags=["Market Index"],
+         description="""
+    30LCI: 30 Large-Cap Index = شاخص 30 شرکت بزرگ بورس
+    دریافت سابقه شاخص 30 شرکت بزرگ بورس در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص 30 شرکت بزرگ بورس بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص 30 شرکت بزرگ بورس
+    """,
+         responses={
     200: {
         "description": "History of LCI30 (30 Large-Cap Index)",
         "content": {
@@ -1403,6 +1448,13 @@ logger = logging.getLogger(__name__)
 
 @app.get("/GET/ACT50-history",
          tags=["Market Index"],
+         description="""
+    ACT50: 50 Most Active Stocks Index = شاخص 50 شرکت فعال بورس
+    دریافت سابقه شاخص 50 شرکت فعال بورس در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص 50 شرکت فعال بورس بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص 50 شرکت فعال بورس
+    """,
          responses={
              200: {
                  "description": "History of ACT50 (50 Most Active Stocks Index)",
@@ -1439,8 +1491,7 @@ async def api_get_ACT50_history(
     show_weekday: bool = Query(
         False, description="Include the weekday of each date"),
     double_date: bool = Query(
-        False, description="Include both Jalali and Gregorian dates")
-):
+        False, description="Include both Jalali and Gregorian dates")):
     """
     API endpoint to retrieve the historical data for the ACT50 index (50 Most Active Stocks).
     Allows filtering based on date range and other options such as showing only adjusted close price, 
@@ -1490,24 +1541,20 @@ async def api_get_ACT50_history(
         raise HTTPException(
             status_code=500, detail="An error occurred while fetching ACT50 history.")
 
-logger = logging.getLogger(__name__)
-
-
 @app.get("/GET/statistics-data",
          tags=["Market Data"],
          summary="Retrieve Statistics Data",
-         description="Fetch statistical data for the provided financial instrument code.",
+         description="اطاعات صفحه آمار ها",
          responses={
              200: {
                  "description": "Statistics data for the provided instrument code",
                  "content": {
                      "application/json": {
                          "example": {
-                             "instrument_code": "123456",
-                             "column1": "value1",
-                             "column2": "value2",
-                             # Add more fields as per the expected output format
-                         }
+        "insCode": "33293588228706998",
+        "dataValue": "235589639178",
+        "dataTypeDesc": "میانگین ارزش معاملات در 3 ماه گذشته "
+    }
                      }
                  }
              },
@@ -1563,7 +1610,10 @@ async def api_get_statistics_data(
 logger = logging.getLogger("intradayOB_history_logger")
 
 
-@app.get("/GET/IntradayOB-history", tags=["Order Book"], responses={
+@app.get("/GET/IntradayOB-history", tags=["Order Book"],description="""
+    دریافت اطلاعات عرضه تقاضای اردر بوک برای یک سهم، در روزهای معاملاتی بین تاریخ شروع و پایان
+    اگر فقط به داده های یک روز مشخص نیاز دارید از تاریخ شروع و پایان یکسان استفاده کنید
+    """,responses={
     200: {
         "description": "Intraday Order Book History",
         "content": {
@@ -1659,7 +1709,13 @@ async def api_get_intradayOB_history(
             status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@app.get("/GET/SectorIndex-history", tags=["Sector Index"], responses={
+@app.get("/GET/SectorIndex-history", tags=["Sector Index"],description="""
+    دریافت سابقه شاخص گروه صنعت مد نظر در روزهای معاملاتی بین تاریخ شروع و پایان
+    قابلیت دریافت همه سابقه شاخص گروه صنعت مد نظر بدون توجه به تاریخ شروع و پایان
+    قابلیت ارائه تاریخ میلادی علاوه بر تاریخ شمسی، قابلیت نمایش روزهای هفته
+    قابلیت دریافت فقط مقدار پایانی روز برای شاخص گروه صنعت مد نظر
+    """,
+    responses={
     200: {
         "description": "History of Sector Index",
         "content": {
@@ -1781,7 +1837,7 @@ async def api_build_price_panel(
             param=param,
             jalali_date=jalali_date,
         )
-        
+
         # If the result is a pandas DataFrame, convert it to a dictionary for JSON response
         if df_panel is not None:
             return df_panel.reset_index().to_dict(orient='records')
@@ -1799,7 +1855,7 @@ logger = logging.getLogger(__name__)
 @app.get("/GET/shareholders-info",
          tags=["Shareholders"],
          summary="Retrieve Shareholder Information",
-         description="Fetch the latest shareholder details for a given ticker symbol.",
+         description="    دریافت آخرین وضعیت سهامداران بالای 1% نماد مورد نظر ",
          responses={
              200: {
                  "description": "Shareholder Information for the given ticker",
@@ -1856,7 +1912,9 @@ async def api_get_shareholders_info(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/GET/notifications-data", tags=["Notifications"], responses={
+@app.get("/GET/notifications-data", tags=["Notifications"],
+    description='اطاعات صفحه اطاعیه',
+    responses={
     200: {
         "description": "Notification data successfully fetched and processed",
         "content": {
@@ -1905,14 +1963,11 @@ async def api_get_notifications_data(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 @app.get("/GET/change-status-data",
          tags=["Market Data"],
          summary="Fetch Processed Notification Data",
-         description="Retrieve and process notification data based on the given instrument code.",
+         description="اطاعات صفحه تغییر وضعیت",
          responses={
              200: {
                  "description": "Returns processed notification data based on the instrument code.",
@@ -1981,14 +2036,11 @@ async def api_get_change_status_data(
         raise HTTPException(
             status_code=500, detail="Unexpected Error: " + str(e))
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 @app.get("/GET/real-legal-data",
          tags=["Market Data"],
          summary="Fetch and process real/legal data",
-         description="Retrieve processed notification data based on a specific instrument code.",
+         description="اطاعات صفحه حقیقی و حقوقی",
          responses={
              200: {
                  "description": "Returns processed notification data based on instrument code.",
@@ -2069,14 +2121,12 @@ async def api_get_realـlegal(
         raise HTTPException(
             status_code=500, detail="Unexpected Error: " + str(e))
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 @app.get("/GET/shareholders-data",
          tags=["Shareholders Data"],
          summary="Retrieve Processed Shareholders Data",
-         description="Fetch and process shareholders data for the given instrument code.",
+         description="اطاعات صفحه سهام داران",
          responses={
              200: {
                  "description": "Returns processed shareholders data based on the instrument code",
@@ -2138,14 +2188,13 @@ async def api_get_shareholders_data(
             f"Unexpected error for instrument code {instrument_code}: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Unexpected error: {str(e)}")
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
 
 
 @app.get("/GET/introduction-data",
          tags=["Introduction Data"],
          summary="Fetch Introduction Data for a Given Instrument",
-         description="Retrieves detailed information about a financial instrument based on its code.",
+         description="اطاعات صفحه (معرفی)",
          responses={
              200: {
                  "description": "Successfully fetched introduction data",
@@ -2229,7 +2278,7 @@ async def api_get_introduction_data(
 @app.get("/GET/assembly-announcement-data",
          tags=["Assembly Announcement Data"],
          summary="Retrieve Processed Assembly Announcement Data",
-         description="Fetch and process assembly announcement data for the given instrument code.",
+         description="اطاعات صفحه آگهی مجمع ",
          responses={
              200: {
                  "description": "Returns processed assembly announcement data based on the instrument code",
@@ -2300,7 +2349,7 @@ async def api_get_assembly_announcement_data(
 @app.get("/GET/profitloss-data",
          tags=["Assembly Announcement Data"],
          summary="Retrieve Processed Assembly Announcement Data",
-         description="Fetch and process assembly announcement data for the given instrument code.",
+         description="اطاعات صفحه سود زیان",
          responses={
              200: {
                  "description": "Returns processed assembly announcement data based on the instrument code",
@@ -2361,7 +2410,7 @@ async def api_get_profit_and_loss_data(
 @app.get("/GET/balance-sheet",
          tags=["Assembly Announcement Data"],
          summary="Retrieve Processed Assembly Announcement Data",
-         description="Fetch and process assembly announcement data for the given instrument code.",
+         description="اطاعات صفحه تراز نامه ",
          responses={
              200: {
                  "description": "Returns processed assembly announcement data based on the instrument code",
@@ -2420,7 +2469,7 @@ async def api_get_balance_sheet_data(
 @app.get("/GET/board-members",
          tags=["Board Members"],
          summary="Fetch and process board members data",
-         description="This API endpoint fetches and processes the board members data for a given instrument code. The response includes details such as the member's name, education degree, designation, and publish date of the announcement.",
+         description="اطاعات صفحه هیات مدیره",
          responses={
              200: {
                  "description": "Successfully retrieved board members data",
@@ -2494,9 +2543,7 @@ import numpy as np
 from fastapi import HTTPException
 
 @app.get("/GET/assembly-decisions",
-         tags=[""],
-         summary="",
-         description="",
+         description="تصمیمات مجمع",
          responses={
              200: {
                  "description": "",
