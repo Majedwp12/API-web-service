@@ -5,6 +5,7 @@ from fastapi import HTTPException, Query, APIRouter
 from fastapi import FastAPI, Query, HTTPException
 from typing import List, Optional, Dict
 from pydantic import BaseModel
+from prometheus_fastapi_instrumentator import Instrumentator
 from src.FinpyClassic import (
     get_tse_webid, get_price_history,
     get_ri_history, Get_Price_History,
@@ -35,7 +36,11 @@ from src.statistics import get_statistics_data
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+# Initialize the instrumentator to track metrics
+instrumentator = Instrumentator()
 
+# Instrument the FastAPI app
+instrumentator.instrument(app).expose(app)
 
 @app.get("/GET/marketwatch",tags=["Market"],description="جدول دیده بان بازار",responses={
         200: {
@@ -418,12 +423,7 @@ async def api_build_market_stocklist(
         detailed_list: bool = Query(
             True, description="Return a detailed stock list"),
         show_progress: bool = Query(
-            True, description="Show progress while fetching data"),
-        save_excel: bool = Query(
-            False, description="Save the stock list as an Excel file"),
-        save_csv: bool = Query(
-            False, description="Save the stock list as a CSV file"),
-        save_path: str = Query('D:/FinPy-TSE Data/', description="Path to save the file if required")):
+            True, description="Show progress while fetching data")):
     """
     Build a stock list from the market.
 
@@ -443,8 +443,7 @@ async def api_build_market_stocklist(
             f"Bourse: {bourse}, Farabourse: {farabourse}, Payeh: {payeh}")
         logger.info(
             f"Detailed list: {detailed_list}, Show progress: {show_progress}")
-        logger.info(
-            f"Save Excel: {save_excel}, Save CSV: {save_csv}, Save path: {save_path}")
+
 
         # Call the function to build the market stock list
         df = Build_Market_StockList(

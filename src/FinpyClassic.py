@@ -2300,7 +2300,7 @@ def Build_Market_StockList(bourse=True, farabourse=True, payeh=True, detailed_li
         look_up['Name'] = look_up['Name'].apply(lambda x: (str(x).replace('ي', 'ی')).replace('ك', 'ک'))
         look_up['Name'] = look_up['Name'].apply(lambda x: x.replace('\u200c', ' '))
         look_up = look_up.set_index('Ticker')
-        look_up.drop(columns=['WEB-ID'], inplace=True)
+        # look_up.drop(columns=['WEB-ID'], inplace=True)
         if (show_progress):
             clear_output(wait=True)
         return look_up
@@ -2331,7 +2331,7 @@ def Build_Market_StockList(bourse=True, farabourse=True, payeh=True, detailed_li
             payeh_lookup = payeh_lookup.join(mkt_watch)
             with_web_id = (payeh_lookup[payeh_lookup['WEB-ID'].notnull()]).copy()
             no_web_id = (payeh_lookup[payeh_lookup['WEB-ID'].isnull()]).copy()
-            no_web_id.drop(columns=['WEB-ID'], inplace=True)
+            # no_web_id.drop(columns=['WEB-ID'], inplace=True)
             # search from google for no web-id stocks:
             web_id = []
             no_stocks = len(no_web_id)
@@ -2444,7 +2444,7 @@ def Build_Market_StockList(bourse=True, farabourse=True, payeh=True, detailed_li
         df_final['Sub-Sector'] = df_final['Sub-Sector'].apply(lambda x: (x.replace('\u200c', ' ')).strip())
 
         df_final = df_final.set_index('Ticker')
-        df_final.drop(columns=['WEB-ID'], inplace=True)
+        # df_final.drop(columns=['WEB-ID'], inplace=True)
         end_time = time.time()
         if (show_progress):
             clear_output(wait=True)
@@ -2452,6 +2452,7 @@ def Build_Market_StockList(bourse=True, farabourse=True, payeh=True, detailed_li
         # print(str(int(round(end_time - start_time,0)))+' seconds took to gather detailed data')
         # -------------------------------------------------------------------------------------------------------------------------------------
         # save file if necessary
+        print(df_final['WEB-ID'])
         return df_final
 
 
